@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print { .no-print { display: none; } }
+        /* Ajuste para que la previsualización no se vea gigante en laptops */
+        #pdf-preview { transform-origin: top center; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -20,20 +22,18 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Cliente</label>
                     <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500" onchange="updatePreview()">
-                        <option value="">Seleccione Cliente...</option>
-                        <option value="1" data-ruc="20123456789">Cliente Ejemplo S.A.C.</option>
+                        <option value="">Cargando clientes...</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Vendedor</label>
                     <select id="vendedor" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
-                        <option value="">Seleccione Vendedor...</option>
-                        <option value="1">Josué Quintana</option>
+                        <option value="">Cargando vendedores...</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Moneda</label>
-                    <select id="moneda" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
+                    <select id="moneda" class="w-full p-2 border rounded-md bg-gray-50" onchange="calculateTotals()">
                         <option value="PEN">Soles (S/)</option>
                         <option value="USD">Dólares ($)</option>
                     </select>
@@ -41,8 +41,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Condición de Pago</label>
                     <select id="condicion" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
-                        <option value="0">Contado</option>
-                        <option value="30">Crédito 30 días</option>
+                        <option value="">Cargando condiciones...</option>
                     </select>
                 </div>
             </div>
@@ -62,9 +61,7 @@
                     <label for="aplicaDetraccion" class="font-medium text-blue-800 text-sm">¿Aplica Detracción?</label>
                 </div>
                 <select id="tipoDetraccion" class="w-full mt-2 p-2 border rounded-md text-sm" onchange="calculateTotals()">
-                    <option value="10">Servicios Empresariales (10%)</option>
-                    <option value="12">Arrendamiento (12%)</option>
-                </select>
+                    </select>
             </div>
 
             <button onclick="guardarCotizacion()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
@@ -72,12 +69,12 @@
             </button>
         </div>
 
-        <div class="w-full lg:w-1/2 p-10 bg-gray-200 flex justify-center">
-            <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl origin-top scale-75 lg:scale-100">
+        <div class="w-full lg:w-1/2 p-10 bg-gray-200 flex justify-center overflow-auto">
+            <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl scale-[0.6] lg:scale-[0.85] xl:scale-100">
                 <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6">
                     <div>
                         <h1 class="text-3xl font-black text-blue-900">COTIZACIÓN</h1>
-                        <p class="text-gray-500">Nro: <span id="view-nro">COT-2026-001</span></p>
+                        <p class="text-gray-500 font-mono">Nro: <span id="view-nro">COT-2026-XXX</span></p>
                     </div>
                     <div class="text-right text-sm">
                         <p class="font-bold">MI NEGOCIO ERP S.A.C.</p>
@@ -87,15 +84,15 @@
 
                 <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
                     <div>
-                        <p class="text-gray-400 uppercase font-bold text-xs">Cliente</p>
-                        <p id="view-cliente" class="font-bold">-</p>
-                        <p id="view-ruc">-</p>
+                        <p class="text-gray-400 uppercase font-bold text-[10px]">Cliente</p>
+                        <p id="view-cliente" class="font-bold text-gray-800">-</p>
+                        <p id="view-ruc" class="text-gray-600">-</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-gray-400 uppercase font-bold text-xs">Fecha</p>
-                        <p id="view-fecha">-</p>
-                        <p class="text-gray-400 uppercase font-bold text-xs mt-2">Vendedor</p>
-                        <p id="view-vendedor">-</p>
+                        <p class="text-gray-400 uppercase font-bold text-[10px]">Fecha Emisión</p>
+                        <p id="view-fecha" class="text-gray-800">-</p>
+                        <p class="text-gray-400 uppercase font-bold text-[10px] mt-2">Vendedor</p>
+                        <p id="view-vendedor" class="text-gray-800">-</p>
                     </div>
                 </div>
 
@@ -108,43 +105,105 @@
                             <th class="p-2 text-right">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="view-items">
-                        </tbody>
+                    <tbody id="view-items"></tbody>
                 </table>
 
                 <div class="flex justify-end">
-                    <div class="w-48 space-y-2 text-sm">
-                        <div class="flex justify-between"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
-                        <div class="flex justify-between"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
-                        <div class="flex justify-between border-t border-gray-800 pt-2 font-bold text-lg">
+                    <div class="w-64 space-y-2 text-sm border-t-2 border-gray-100 pt-4">
+                        <div class="flex justify-between text-gray-600"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
+                        <div class="flex justify-between text-gray-600"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
+                        <div class="flex justify-between border-t border-gray-800 pt-2 font-bold text-xl text-blue-900">
                             <span>Total:</span> <span id="view-total">0.00</span>
                         </div>
                         <div id="view-detraccion-box" class="hidden text-red-600 border-t border-dashed pt-2">
-                            <div class="flex justify-between text-xs"><span>Detracción:</span> <span id="view-detraccion">0.00</span></div>
+                            <div class="flex justify-between text-xs font-bold italic">
+                                <span>Detracción:</span> <span id="view-detraccion">0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
+        const API_URL = "https://cotizador-render-supabase.onrender.com/"; // CAMBIAR POR TU URL REAL
         let rowCount = 0;
+        window.catalogoItems = [];
+
+        window.onload = async () => {
+            await cargarCatalogos();
+            addRow(); // Iniciar con una fila vacía
+        };
+
+        async function cargarCatalogos() {
+            try {
+                const res = await fetch(`${API_URL}/catalogos`);
+                const cat = await res.json();
+
+                // Llenar Clientes
+                const selectCliente = document.getElementById('cliente');
+                selectCliente.innerHTML = '<option value="">Seleccione Cliente...</option>';
+                cat.clientes.forEach(c => {
+                    let opt = new Option(c.razon_social, c.id);
+                    opt.setAttribute('data-ruc', c.ruc);
+                    selectCliente.add(opt);
+                });
+
+                // Llenar Vendedores
+                const selectVen = document.getElementById('vendedor');
+                selectVen.innerHTML = '<option value="">Seleccione Vendedor...</option>';
+                cat.vendedores.forEach(v => selectVen.add(new Option(v.nombre, v.id)));
+
+                // Llenar Condiciones
+                const selectCond = document.getElementById('condicion');
+                selectCond.innerHTML = '<option value="">Seleccione Pago...</option>';
+                cat.condiciones.forEach(cp => {
+                    let opt = new Option(cp.descripcion, cp.id);
+                    opt.setAttribute('data-dias', cp.dias);
+                    selectCond.add(opt);
+                });
+
+                // Llenar Detracciones
+                const selectDet = document.getElementById('tipoDetraccion');
+                selectDet.innerHTML = '';
+                cat.detracciones.forEach(d => selectDet.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
+
+                window.catalogoItems = cat.items;
+            } catch (error) {
+                console.error("Error cargando catálogos:", error);
+                alert("Error al conectar con el servidor de catálogos.");
+            }
+        }
 
         function addRow() {
             rowCount++;
             const container = document.getElementById('items-container');
             const row = document.createElement('div');
             row.id = `row-${rowCount}`;
-            row.className = "flex gap-2 bg-gray-50 p-2 rounded-md border border-gray-200";
+            row.className = "flex gap-2 bg-gray-50 p-2 rounded-md border border-gray-200 items-center";
+            
+            let opcionesItems = window.catalogoItems.map(i => 
+                `<option value="${i.id}" data-precio="${i.precio_unitario}" data-desc="${i.descripcion}">${i.codigo} - ${i.descripcion}</option>`
+            ).join('');
+
             row.innerHTML = `
-                <input type="text" placeholder="Descripción" class="flex-1 p-1 text-sm border-none bg-transparent focus:ring-0" oninput="updatePreview()">
+                <select class="flex-1 p-1 text-sm border rounded bg-white" onchange="seleccionarItem(${rowCount}, this)">
+                    <option value="">Seleccione Ítem...</option>
+                    ${opcionesItems}
+                </select>
                 <input type="number" placeholder="Cant" class="w-16 p-1 text-sm border rounded" value="1" oninput="calculateTotals()">
                 <input type="number" placeholder="Precio" class="w-24 p-1 text-sm border rounded" oninput="calculateTotals()">
                 <button onclick="removeRow(${rowCount})" class="text-red-500 font-bold px-2">×</button>
             `;
             container.appendChild(row);
+        }
+
+        function seleccionarItem(id, select) {
+            const row = document.getElementById(`row-${id}`);
+            const selectedOpt = select.options[select.selectedIndex];
+            const precio = selectedOpt.getAttribute('data-precio');
+            row.children[2].value = precio;
             calculateTotals();
         }
 
@@ -156,43 +215,45 @@
         function calculateTotals() {
             let subtotal = 0;
             const rows = document.querySelectorAll('#items-container > div');
-            const symbol = document.getElementById('moneda').value === 'PEN' ? 'S/ ' : '$ ';
+            const moneda = document.getElementById('moneda').value;
+            const symbol = moneda === 'PEN' ? 'S/ ' : '$ ';
             
             let previewRows = "";
 
             rows.forEach(row => {
-                const desc = row.children[0].value || "Sin descripción";
+                const select = row.children[0];
+                const desc = select.options[select.selectedIndex]?.text || "Seleccione un ítem";
                 const qty = parseFloat(row.children[1].value) || 0;
                 const price = parseFloat(row.children[2].value) || 0;
                 const lineTotal = qty * price;
                 subtotal += lineTotal;
 
-                previewRows += `
-                    <tr class="border-b text-xs">
-                        <td class="p-2">${desc}</td>
-                        <td class="p-2 text-center">${qty}</td>
-                        <td class="p-2 text-right">${price.toFixed(2)}</td>
-                        <td class="p-2 text-right">${lineTotal.toFixed(2)}</td>
-                    </tr>
-                `;
+                if (select.value !== "") {
+                    previewRows += `
+                        <tr class="border-b text-xs text-gray-700">
+                            <td class="p-2 font-medium">${desc}</td>
+                            <td class="p-2 text-center">${qty}</td>
+                            <td class="p-2 text-right">${price.toFixed(2)}</td>
+                            <td class="p-2 text-right font-bold">${lineTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
             });
 
             const igv = subtotal * 0.18;
             const total = subtotal + igv;
             
-            // Lógica Detracción
             const aplicaDet = document.getElementById('aplicaDetraccion').checked;
             const percDet = parseFloat(document.getElementById('tipoDetraccion').value);
             const valDet = total * (percDet / 100);
 
-            // Actualizar vista previa
             document.getElementById('view-items').innerHTML = previewRows;
-            document.getElementById('view-subtotal').innerText = symbol + subtotal.toFixed(2);
-            document.getElementById('view-igv').innerText = symbol + igv.toFixed(2);
-            document.getElementById('view-total').innerText = symbol + total.toFixed(2);
+            document.getElementById('view-subtotal').innerText = symbol + subtotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('view-igv').innerText = symbol + igv.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('view-total').innerText = symbol + total.toLocaleString('en-US', {minimumFractionDigits: 2});
             
             const detBox = document.getElementById('view-detraccion-box');
-            if(aplicaDet && total > 700) {
+            if(aplicaDet && total > 700 && moneda === 'PEN') {
                 detBox.classList.remove('hidden');
                 document.getElementById('view-detraccion').innerText = symbol + valDet.toFixed(2);
             } else {
@@ -203,14 +264,18 @@
 
         function updatePreview() {
             const clienteSelect = document.getElementById('cliente');
-            document.getElementById('view-cliente').innerText = clienteSelect.options[clienteSelect.selectedIndex].text;
-            document.getElementById('view-ruc').innerText = "RUC: " + (clienteSelect.options[clienteSelect.selectedIndex].getAttribute('data-ruc') || '-');
-            document.getElementById('view-vendedor').innerText = document.getElementById('vendedor').options[document.getElementById('vendedor').selectedIndex].text;
-            document.getElementById('view-fecha').innerText = new Date().toLocaleDateString();
+            const vdorSelect = document.getElementById('vendedor');
+            
+            document.getElementById('view-cliente').innerText = clienteSelect.options[clienteSelect.selectedIndex]?.text || "-";
+            document.getElementById('view-ruc').innerText = "RUC: " + (clienteSelect.options[clienteSelect.selectedIndex]?.getAttribute('data-ruc') || '-');
+            document.getElementById('view-vendedor').innerText = vdorSelect.options[vdorSelect.selectedIndex]?.text || "-";
+            document.getElementById('view-fecha').innerText = new Date().toLocaleDateString('es-PE');
         }
 
-        // Iniciar con una fila
-        addRow();
+        async function guardarCotizacion() {
+            // Lógica para recolectar y enviar a backend (Paso siguiente)
+            alert("Listo para enviar a la base de datos de Supabase.");
+        }
     </script>
 </body>
 </html>
