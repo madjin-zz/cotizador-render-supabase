@@ -1,0 +1,13 @@
+async function guardarCotizacion() {
+    const data = obtenerDatosDelForm(); // Tu lógica para recolectar inputs
+
+    const response = await fetch("https://api-cotizador.onrender.com/cotizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+        alert("¡Cotización guardada con éxito en la nube!");
+    }
+}
