@@ -3,49 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotizador SAP</title>
+    <title>Cotizador Pro - SAP Business One Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print { .no-print { display: none; } }
+    </style>
 </head>
-<body class="bg-gray-100 p-10">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-xl font-bold mb-4">Generar Cotización</h1>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
         
-        <input type="text" id="cliente" placeholder="Nombre del Cliente" class="w-full mb-2 p-2 border">
-        <input type="number" id="monto" placeholder="Monto Total" class="w-full mb-4 p-2 border">
-        
-        <button onclick="guardarCotizacion()" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-            Guardar en la Nube
-        </button>
+        <div class="w-full lg:w-1/2 p-6 bg-white shadow-xl no-print overflow-y-auto">
+            <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-2">Datos de la Cotización</h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Cliente</label>
+                    <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500" onchange="updatePreview()">
+                        <option value="">Seleccione Cliente...</option>
+                        <option value="1" data-ruc="20123456789">Cliente Ejemplo S.A.C.</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Vendedor</label>
+                    <select id="vendedor" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
+                        <option value="">Seleccione Vendedor...</option>
+                        <option value="1">Josué Quintana</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Moneda</label>
+                    <select id="moneda" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
+                        <option value="PEN">Soles (S/)</option>
+                        <option value="USD">Dólares ($)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Condición de Pago</label>
+                    <select id="condicion" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
+                        <option value="0">Contado</option>
+                        <option value="30">Crédito 30 días</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-semibold text-gray-800">Líneas de Detalle</h3>
+                    <button onclick="addRow()" class="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700">+ Agregar Ítem</button>
+                </div>
+                <div id="items-container" class="space-y-2">
+                    </div>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="aplicaDetraccion" onchange="calculateTotals()">
+                    <label for="aplicaDetraccion" class="font-medium text-blue-800 text-sm">¿Aplica Detracción?</label>
+                </div>
+                <select id="tipoDetraccion" class="w-full mt-2 p-2 border rounded-md text-sm" onchange="calculateTotals()">
+                    <option value="10">Servicios Empresariales (10%)</option>
+                    <option value="12">Arrendamiento (12%)</option>
+                </select>
+            </div>
+
+            <button onclick="guardarCotizacion()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
+                GUARDAR Y SINCRONIZAR
+            </button>
+        </div>
+
+        <div class="w-full lg:w-1/2 p-10 bg-gray-200 flex justify-center">
+            <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl origin-top scale-75 lg:scale-100">
+                <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6">
+                    <div>
+                        <h1 class="text-3xl font-black text-blue-900">COTIZACIÓN</h1>
+                        <p class="text-gray-500">Nro: <span id="view-nro">COT-2026-001</span></p>
+                    </div>
+                    <div class="text-right text-sm">
+                        <p class="font-bold">MI NEGOCIO ERP S.A.C.</p>
+                        <p>Lima, Perú</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
+                    <div>
+                        <p class="text-gray-400 uppercase font-bold text-xs">Cliente</p>
+                        <p id="view-cliente" class="font-bold">-</p>
+                        <p id="view-ruc">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-gray-400 uppercase font-bold text-xs">Fecha</p>
+                        <p id="view-fecha">-</p>
+                        <p class="text-gray-400 uppercase font-bold text-xs mt-2">Vendedor</p>
+                        <p id="view-vendedor">-</p>
+                    </div>
+                </div>
+
+                <table class="w-full text-left text-sm mb-8">
+                    <thead>
+                        <tr class="bg-blue-900 text-white">
+                            <th class="p-2">Descripción</th>
+                            <th class="p-2 text-center">Cant.</th>
+                            <th class="p-2 text-right">Precio</th>
+                            <th class="p-2 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="view-items">
+                        </tbody>
+                </table>
+
+                <div class="flex justify-end">
+                    <div class="w-48 space-y-2 text-sm">
+                        <div class="flex justify-between"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
+                        <div class="flex justify-between"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
+                        <div class="flex justify-between border-t border-gray-800 pt-2 font-bold text-lg">
+                            <span>Total:</span> <span id="view-total">0.00</span>
+                        </div>
+                        <div id="view-detraccion-box" class="hidden text-red-600 border-t border-dashed pt-2">
+                            <div class="flex justify-between text-xs"><span>Detracción:</span> <span id="view-detraccion">0.00</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Esta es la función que ya tenías, pero integrada en el HTML
-        async function guardarCotizacion() {
-            const data = {
-                cliente: document.getElementById('cliente').value,
-                monto: document.getElementById('monto').value
-            };
+        let rowCount = 0;
 
-            // Asegúrate de que esta URL sea la que te dio Render para tu Web Service (Backend)
-            const URL_BACKEND = "https://api-cotizador.onrender.com/cotizar";
-
-            try {
-                const response = await fetch(URL_BACKEND, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data)
-                });
-
-                if (response.ok) {
-                    alert("¡Cotización enviada al servidor con éxito!");
-                } else {
-                    alert("Error en el servidor");
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                alert("No se pudo conectar con el servidor");
-            }
+        function addRow() {
+            rowCount++;
+            const container = document.getElementById('items-container');
+            const row = document.createElement('div');
+            row.id = `row-${rowCount}`;
+            row.className = "flex gap-2 bg-gray-50 p-2 rounded-md border border-gray-200";
+            row.innerHTML = `
+                <input type="text" placeholder="Descripción" class="flex-1 p-1 text-sm border-none bg-transparent focus:ring-0" oninput="updatePreview()">
+                <input type="number" placeholder="Cant" class="w-16 p-1 text-sm border rounded" value="1" oninput="calculateTotals()">
+                <input type="number" placeholder="Precio" class="w-24 p-1 text-sm border rounded" oninput="calculateTotals()">
+                <button onclick="removeRow(${rowCount})" class="text-red-500 font-bold px-2">×</button>
+            `;
+            container.appendChild(row);
+            calculateTotals();
         }
+
+        function removeRow(id) {
+            document.getElementById(`row-${id}`).remove();
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            const rows = document.querySelectorAll('#items-container > div');
+            const symbol = document.getElementById('moneda').value === 'PEN' ? 'S/ ' : '$ ';
+            
+            let previewRows = "";
+
+            rows.forEach(row => {
+                const desc = row.children[0].value || "Sin descripción";
+                const qty = parseFloat(row.children[1].value) || 0;
+                const price = parseFloat(row.children[2].value) || 0;
+                const lineTotal = qty * price;
+                subtotal += lineTotal;
+
+                previewRows += `
+                    <tr class="border-b text-xs">
+                        <td class="p-2">${desc}</td>
+                        <td class="p-2 text-center">${qty}</td>
+                        <td class="p-2 text-right">${price.toFixed(2)}</td>
+                        <td class="p-2 text-right">${lineTotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            const igv = subtotal * 0.18;
+            const total = subtotal + igv;
+            
+            // Lógica Detracción
+            const aplicaDet = document.getElementById('aplicaDetraccion').checked;
+            const percDet = parseFloat(document.getElementById('tipoDetraccion').value);
+            const valDet = total * (percDet / 100);
+
+            // Actualizar vista previa
+            document.getElementById('view-items').innerHTML = previewRows;
+            document.getElementById('view-subtotal').innerText = symbol + subtotal.toFixed(2);
+            document.getElementById('view-igv').innerText = symbol + igv.toFixed(2);
+            document.getElementById('view-total').innerText = symbol + total.toFixed(2);
+            
+            const detBox = document.getElementById('view-detraccion-box');
+            if(aplicaDet && total > 700) {
+                detBox.classList.remove('hidden');
+                document.getElementById('view-detraccion').innerText = symbol + valDet.toFixed(2);
+            } else {
+                detBox.classList.add('hidden');
+            }
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const clienteSelect = document.getElementById('cliente');
+            document.getElementById('view-cliente').innerText = clienteSelect.options[clienteSelect.selectedIndex].text;
+            document.getElementById('view-ruc').innerText = "RUC: " + (clienteSelect.options[clienteSelect.selectedIndex].getAttribute('data-ruc') || '-');
+            document.getElementById('view-vendedor').innerText = document.getElementById('vendedor').options[document.getElementById('vendedor').selectedIndex].text;
+            document.getElementById('view-fecha').innerText = new Date().toLocaleDateString();
+        }
+
+        // Iniciar con una fila
+        addRow();
     </script>
 </body>
 </html>
