@@ -80,15 +80,20 @@
 
         <div class="w-full lg:w-1/2 p-10 bg-gray-200 flex justify-center overflow-auto">
             <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl scale-[0.6] lg:scale-[0.85] xl:scale-100 font-sans">
-                <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6">
-                    <div>
+                
+                <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6 items-start">
+                    <div class="flex-1">
                         <h1 class="text-3xl font-black text-blue-900">COTIZACIÓN</h1>
-                        <p class="text-gray-500 font-mono">Nro: <span id="view-nro">-</span></p>
+                        <p class="text-gray-500 font-mono text-sm">Nro: <span id="view-nro">-</span></p>
+                        <div class="mt-4 text-[11px] leading-tight">
+                            <p class="font-bold text-gray-800">JOSUE BENIGNO, QUINTANA PARRAGA</p>
+                            <p class="text-gray-600">RUC: 1042479040</p>
+                            <p class="text-gray-600">Lima, Perú</p>
+                        </div>
                     </div>
-                    <div class="text-right text-[10px]">
-                        <p class="font-bold">MI NEGOCIO ERP S.A.C.</p>
-                        <p>RUC: 20600000000</p>
-                        <p>Lima, Perú</p>
+                    <div class="text-right flex flex-col items-end">
+                        <p class="text-[9px] font-bold text-gray-500 italic mb-1 uppercase">Actuando como distribuidor de:</p>
+                        <img src="LOGO_1.png" alt="Logo Distribuidor" class="h-16 w-auto object-contain">
                     </div>
                 </div>
 
@@ -194,7 +199,7 @@
                 });
 
                 window.catalogoItems = cat.items;
-            } catch (e) { alert("Error de conexión"); }
+            } catch (e) { alert("Error de conexión con la base de datos"); }
         }
 
         function addRow(tipo) {
@@ -258,7 +263,6 @@
                 const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
                 const montoDetra = (aplicaDetra && totalZona > 700) ? totalZona * (percDetra / 100) : 0;
 
-                // Actualizar UI
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
                 document.getElementById(`view-body-${tipo}`).innerHTML = html;
                 document.getElementById(`view-resumen-${tipo}`).innerHTML = `
