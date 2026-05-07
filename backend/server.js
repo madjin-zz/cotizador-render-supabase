@@ -7,8 +7,8 @@ app.use(cors());
 app.use(express.json());
 
 // Reemplaza con tus credenciales de Supabase
-const supabaseUrl = 'https://cotizador-render-supabase.onrender.com';
-const supabaseKey = 'tu-anon-key';
+const supabaseUrl = 'https://xkpxuxjvcjkcxrzptmqf.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrcHh1eGp2Y2prY3hyenB0bXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzc4NjAsImV4cCI6MjA5Mzc1Mzg2MH0.4J6F2aiOWVTav-OdF6zBjsThL766biQYsspH-fRRdX0';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Ruta para obtener todos los catálogos de un solo golpe
