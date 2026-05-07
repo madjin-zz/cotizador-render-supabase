@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @media print { .no-print { display: none; } }
-        /* Ajuste para que la previsualización no se vea gigante en laptops */
         #pdf-preview { transform-origin: top center; }
+        .col-header { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #4b5563; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -18,10 +18,25 @@
         <div class="w-full lg:w-1/2 p-6 bg-white shadow-xl no-print overflow-y-auto">
             <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-2">Datos de la Cotización</h2>
             
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Correlativo</label>
+                    <input type="text" id="correlativo" class="w-full p-2 border rounded-md bg-gray-100 font-mono" readonly value="Cargando...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Fecha Emisión</label>
+                    <input type="date" id="fecha_emision" class="w-full p-2 border rounded-md" onchange="updatePreview()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Días Validez</label>
+                    <input type="number" id="validez" value="15" class="w-full p-2 border rounded-md" oninput="updatePreview()">
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Cliente</label>
-                    <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50 focus:ring-2 focus:ring-blue-500" onchange="updatePreview()">
+                    <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
                         <option value="">Cargando clientes...</option>
                     </select>
                 </div>
@@ -31,28 +46,30 @@
                         <option value="">Cargando vendedores...</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Moneda</label>
-                    <select id="moneda" class="w-full p-2 border rounded-md bg-gray-50" onchange="calculateTotals()">
-                        <option value="PEN">Soles (S/)</option>
-                        <option value="USD">Dólares ($)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Condición de Pago</label>
-                    <select id="condicion" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
-                        <option value="">Cargando condiciones...</option>
-                    </select>
-                </div>
             </div>
 
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-semibold text-gray-800">Líneas de Detalle</h3>
-                    <button onclick="addRow()" class="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700">+ Agregar Ítem</button>
+            <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-blue-900">Lineas de Detalle Equipos y Componentes</h3>
+                    <button onclick="addRow('equipos')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Agregar Equipo</button>
                 </div>
-                <div id="items-container" class="space-y-2">
-                    </div>
+                <div class="grid grid-cols-12 gap-1 mb-2 px-1 text-[9px] uppercase font-bold text-gray-500">
+                    <div class="col-span-4">Descripción</div>
+                    <div class="col-span-1 text-center">Cant</div>
+                    <div class="col-span-2 text-right">P. Unit</div>
+                    <div class="col-span-1 text-center">% Desc</div>
+                    <div class="col-span-2 text-right">P. Desc</div>
+                    <div class="col-span-2 text-right">Total</div>
+                </div>
+                <div id="container-equipos" class="space-y-1"></div>
+            </div>
+
+            <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-blue-900">Lineas de Detalle de Servicios</h3>
+                    <button onclick="addRow('servicios')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Agregar Servicio</button>
+                </div>
+                <div id="container-servicios" class="space-y-1"></div>
             </div>
 
             <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
@@ -60,8 +77,7 @@
                     <input type="checkbox" id="aplicaDetraccion" onchange="calculateTotals()">
                     <label for="aplicaDetraccion" class="font-medium text-blue-800 text-sm">¿Aplica Detracción?</label>
                 </div>
-                <select id="tipoDetraccion" class="w-full mt-2 p-2 border rounded-md text-sm" onchange="calculateTotals()">
-                    </select>
+                <select id="tipoDetraccion" class="w-full mt-2 p-2 border rounded-md text-sm" onchange="calculateTotals()"></select>
             </div>
 
             <button onclick="guardarCotizacion()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
@@ -74,7 +90,7 @@
                 <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6">
                     <div>
                         <h1 class="text-3xl font-black text-blue-900">COTIZACIÓN</h1>
-                        <p class="text-gray-500 font-mono">Nro: <span id="view-nro">COT-2026-XXX</span></p>
+                        <p class="text-gray-500 font-mono">Nro: <span id="view-nro">-</span></p>
                     </div>
                     <div class="text-right text-sm">
                         <p class="font-bold">MI NEGOCIO ERP S.A.C.</p>
@@ -82,43 +98,57 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-8 mb-8 text-sm">
+                <div class="grid grid-cols-2 gap-8 mb-4 text-sm">
                     <div>
-                        <p class="text-gray-400 uppercase font-bold text-[10px]">Cliente</p>
+                        <p class="col-header">Cliente</p>
                         <p id="view-cliente" class="font-bold text-gray-800">-</p>
                         <p id="view-ruc" class="text-gray-600">-</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-gray-400 uppercase font-bold text-[10px]">Fecha Emisión</p>
+                        <p class="col-header">Fecha / Validez</p>
                         <p id="view-fecha" class="text-gray-800">-</p>
-                        <p class="text-gray-400 uppercase font-bold text-[10px] mt-2">Vendedor</p>
-                        <p id="view-vendedor" class="text-gray-800">-</p>
+                        <p id="view-validez" class="text-gray-500 text-xs">-</p>
                     </div>
                 </div>
 
-                <table class="w-full text-left text-sm mb-8">
-                    <thead>
-                        <tr class="bg-blue-900 text-white">
-                            <th class="p-2">Descripción</th>
-                            <th class="p-2 text-center">Cant.</th>
-                            <th class="p-2 text-right">Precio</th>
-                            <th class="p-2 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="view-items"></tbody>
-                </table>
+                <div id="view-seccion-equipos" class="mb-6">
+                    <h4 class="text-[10px] font-bold text-blue-800 border-b mb-1">EQUIPOS Y COMPONENTES</h4>
+                    <table class="w-full text-[10px] mb-2">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-left">Descripción</th>
+                            <th class="p-1 text-center">Cant.</th>
+                            <th class="p-1 text-right">P.Unit</th>
+                            <th class="p-1 text-center">% Desc</th>
+                            <th class="p-1 text-right">Total</th>
+                        </tr></thead>
+                        <tbody id="view-body-equipos"></tbody>
+                    </table>
+                </div>
 
-                <div class="flex justify-end">
-                    <div class="w-64 space-y-2 text-sm border-t-2 border-gray-100 pt-4">
-                        <div class="flex justify-between text-gray-600"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
-                        <div class="flex justify-between text-gray-600"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
-                        <div class="flex justify-between border-t border-gray-800 pt-2 font-bold text-xl text-blue-900">
-                            <span>Total:</span> <span id="view-total">0.00</span>
+                <div id="view-seccion-servicios" class="mb-6">
+                    <h4 class="text-[10px] font-bold text-blue-800 border-b mb-1">SERVICIOS</h4>
+                    <table class="w-full text-[10px] mb-2">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-left">Descripción</th>
+                            <th class="p-1 text-center">Cant.</th>
+                            <th class="p-1 text-right">P.Unit</th>
+                            <th class="p-1 text-center">% Desc</th>
+                            <th class="p-1 text-right">Total</th>
+                        </tr></thead>
+                        <tbody id="view-body-servicios"></tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end pt-4 border-t-2">
+                    <div class="w-64 space-y-1 text-[11px]">
+                        <div class="flex justify-between"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
+                        <div class="flex justify-between text-red-600"><span>Total Descuento:</span> <span id="view-total-desc">0.00</span></div>
+                        <div class="flex justify-between"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
+                        <div class="flex justify-between font-bold text-lg text-blue-900 border-t pt-1">
+                            <span>TOTAL FINAL:</span> <span id="view-total">0.00</span>
                         </div>
-                        <div id="view-detraccion-box" class="hidden text-red-600 border-t border-dashed pt-2">
-                            <div class="flex justify-between text-xs font-bold italic">
-                                <span>Detracción:</span> <span id="view-detraccion">0.00</span>
-                            </div>
+                        <div id="view-detraccion-box" class="hidden text-orange-700 text-[10px] italic pt-2">
+                            * Sujeto a detracción: <span id="view-detraccion">0.00</span>
                         </div>
                     </div>
                 </div>
@@ -127,154 +157,147 @@
     </div>
 
     <script>
-        const API_URL = "https://servidor-cotizaciones.onrender.com"; // CAMBIAR POR TU URL REAL
-        let rowCount = 0;
+        const API_URL = "https://servidor-cotizaciones.onrender.com"; 
         window.catalogoItems = [];
 
         window.onload = async () => {
+            document.getElementById('fecha_emision').value = new Date().toISOString().split('T')[0];
             await cargarCatalogos();
-            addRow(); // Iniciar con una fila vacía
+            await cargarCorrelativo();
+            addRow('equipos');
+            addRow('servicios');
         };
+
+        async function cargarCorrelativo() {
+            try {
+                const res = await fetch(`${API_URL}/correlativo-siguiente`);
+                const data = await res.json();
+                document.getElementById('correlativo').value = data.correlativo;
+                document.getElementById('view-nro').innerText = data.correlativo;
+            } catch (e) { console.error(e); }
+        }
 
         async function cargarCatalogos() {
             try {
                 const res = await fetch(`${API_URL}/catalogos`);
                 const cat = await res.json();
-
-                // Llenar Clientes
-                const selectCliente = document.getElementById('cliente');
-                selectCliente.innerHTML = '<option value="">Seleccione Cliente...</option>';
+                
+                const clienteSel = document.getElementById('cliente');
+                clienteSel.innerHTML = '<option value="">Seleccione Cliente...</option>';
                 cat.clientes.forEach(c => {
                     let opt = new Option(c.razon_social, c.id);
                     opt.setAttribute('data-ruc', c.ruc);
-                    selectCliente.add(opt);
+                    clienteSel.add(opt);
                 });
 
-                // Llenar Vendedores
-                const selectVen = document.getElementById('vendedor');
-                selectVen.innerHTML = '<option value="">Seleccione Vendedor...</option>';
-                cat.vendedores.forEach(v => selectVen.add(new Option(v.nombre, v.id)));
+                const vdorSel = document.getElementById('vendedor');
+                vdorSel.innerHTML = '<option value="">Seleccione Vendedor...</option>';
+                cat.vendedores.forEach(v => vdorSel.add(new Option(v.nombre, v.id)));
 
-                // Llenar Condiciones
-                const selectCond = document.getElementById('condicion');
-                selectCond.innerHTML = '<option value="">Seleccione Pago...</option>';
-                cat.condiciones.forEach(cp => {
-                    let opt = new Option(cp.descripcion, cp.id);
-                    opt.setAttribute('data-dias', cp.dias);
-                    selectCond.add(opt);
-                });
-
-                // Llenar Detracciones
-                const selectDet = document.getElementById('tipoDetraccion');
-                selectDet.innerHTML = '';
-                cat.detracciones.forEach(d => selectDet.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
+                const detSel = document.getElementById('tipoDetraccion');
+                cat.detracciones.forEach(d => detSel.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
 
                 window.catalogoItems = cat.items;
-            } catch (error) {
-                console.error("Error cargando catálogos:", error);
-                alert("Error al conectar con el servidor de catálogos.");
-            }
+            } catch (error) { alert("Error al cargar datos de Supabase"); }
         }
 
-        function addRow() {
-            rowCount++;
-            const container = document.getElementById('items-container');
+        function addRow(tipo) {
+            const container = document.getElementById(`container-${tipo}`);
             const row = document.createElement('div');
-            row.id = `row-${rowCount}`;
-            row.className = "flex gap-2 bg-gray-50 p-2 rounded-md border border-gray-200 items-center";
+            row.className = "grid grid-cols-12 gap-1 items-center mb-1 group";
             
-            let opcionesItems = window.catalogoItems.map(i => 
-                `<option value="${i.id}" data-precio="${i.precio_unitario}" data-desc="${i.descripcion}">${i.codigo} - ${i.descripcion}</option>`
-            ).join('');
+            const itemOptions = window.catalogoItems.map(i => `<option value="${i.id}" data-precio="${i.precio_unitario}">${i.descripcion}</option>`).join('');
 
             row.innerHTML = `
-                <select class="flex-1 p-1 text-sm border rounded bg-white" onchange="seleccionarItem(${rowCount}, this)">
-                    <option value="">Seleccione Ítem...</option>
-                    ${opcionesItems}
-                </select>
-                <input type="number" placeholder="Cant" class="w-16 p-1 text-sm border rounded" value="1" oninput="calculateTotals()">
-                <input type="number" placeholder="Precio" class="w-24 p-1 text-sm border rounded" oninput="calculateTotals()">
-                <button onclick="removeRow(${rowCount})" class="text-red-500 font-bold px-2">×</button>
+                <div class="col-span-4">
+                    <select class="w-full p-1 text-[10px] border rounded" onchange="updateRow(this)">
+                        <option value="">Seleccione...</option>
+                        ${itemOptions}
+                    </select>
+                </div>
+                <div class="col-span-1"><input type="number" value="1" class="w-full p-1 text-[10px] border rounded text-center" oninput="calculateTotals()"></div>
+                <div class="col-span-2"><input type="number" step="0.01" class="w-full p-1 text-[10px] border rounded text-right" oninput="calculateTotals()"></div>
+                <div class="col-span-1"><input type="number" value="0" class="w-full p-1 text-[10px] border rounded text-center bg-yellow-50" oninput="calculateTotals()"></div>
+                <div class="col-span-2"><input type="number" class="w-full p-1 text-[10px] border rounded text-right bg-gray-100" readonly></div>
+                <div class="col-span-2 flex items-center">
+                    <input type="number" class="w-full p-1 text-[10px] border rounded text-right font-bold bg-blue-50" readonly>
+                    <button onclick="this.parentElement.parentElement.remove(); calculateTotals();" class="ml-1 text-red-400 hover:text-red-600">×</button>
+                </div>
             `;
             container.appendChild(row);
         }
 
-        function seleccionarItem(id, select) {
-            const row = document.getElementById(`row-${id}`);
-            const selectedOpt = select.options[select.selectedIndex];
-            const precio = selectedOpt.getAttribute('data-precio');
-            row.children[2].value = precio;
-            calculateTotals();
-        }
-
-        function removeRow(id) {
-            document.getElementById(`row-${id}`).remove();
+        function updateRow(select) {
+            const row = select.parentElement.parentElement;
+            const precio = select.options[select.selectedIndex].getAttribute('data-precio');
+            row.children[2].querySelector('input').value = precio;
             calculateTotals();
         }
 
         function calculateTotals() {
-            let subtotal = 0;
-            const rows = document.querySelectorAll('#items-container > div');
-            const moneda = document.getElementById('moneda').value;
-            const symbol = moneda === 'PEN' ? 'S/ ' : '$ ';
-            
-            let previewRows = "";
+            let grandSubtotal = 0;
+            let grandDescuento = 0;
 
-            rows.forEach(row => {
-                const select = row.children[0];
-                const desc = select.options[select.selectedIndex]?.text || "Seleccione un ítem";
-                const qty = parseFloat(row.children[1].value) || 0;
-                const price = parseFloat(row.children[2].value) || 0;
-                const lineTotal = qty * price;
-                subtotal += lineTotal;
+            ['equipos', 'servicios'].forEach(tipo => {
+                let seccionSubtotal = 0;
+                let previewHtml = "";
+                const rows = document.querySelectorAll(`#container-${tipo} > div`);
 
-                if (select.value !== "") {
-                    previewRows += `
-                        <tr class="border-b text-xs text-gray-700">
-                            <td class="p-2 font-medium">${desc}</td>
-                            <td class="p-2 text-center">${qty}</td>
-                            <td class="p-2 text-right">${price.toFixed(2)}</td>
-                            <td class="p-2 text-right font-bold">${lineTotal.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }
+                rows.forEach(row => {
+                    const desc = row.children[0].querySelector('select').options[row.children[0].querySelector('select').selectedIndex].text;
+                    const cant = parseFloat(row.children[1].querySelector('input').value) || 0;
+                    const pUnit = parseFloat(row.children[2].querySelector('input').value) || 0;
+                    const pDesc = parseFloat(row.children[3].querySelector('input').value) || 0;
+
+                    const totalBruto = cant * pUnit;
+                    const montoDesc = totalBruto * (pDesc / 100);
+                    const pConDesc = pUnit * (1 - (pDesc / 100));
+                    const totalLinea = cant * pConDesc;
+
+                    row.children[4].querySelector('input').value = pConDesc.toFixed(2);
+                    row.children[5].querySelector('input').value = totalLinea.toFixed(2);
+
+                    seccionSubtotal += totalLinea;
+                    grandDescuento += montoDesc;
+
+                    if (row.children[0].querySelector('select').value !== "") {
+                        previewHtml += `<tr><td class="p-1 border-b">${desc}</td><td class="p-1 border-b text-center">${cant}</td><td class="p-1 border-b text-right">${pUnit.toFixed(2)}</td><td class="p-1 border-b text-center">${pDesc}%</td><td class="p-1 border-b text-right font-bold">${totalLinea.toFixed(2)}</td></tr>`;
+                    }
+                });
+
+                document.getElementById(`view-body-${tipo}`).innerHTML = previewHtml;
+                grandSubtotal += seccionSubtotal;
             });
 
-            const igv = subtotal * 0.18;
-            const total = subtotal + igv;
-            
-            const aplicaDet = document.getElementById('aplicaDetraccion').checked;
-            const percDet = parseFloat(document.getElementById('tipoDetraccion').value);
-            const valDet = total * (percDet / 100);
+            const igv = grandSubtotal * 0.18;
+            const totalFinal = grandSubtotal + igv;
+            const percDet = parseFloat(document.getElementById('tipoDetraccion').value) || 0;
 
-            document.getElementById('view-items').innerHTML = previewRows;
-            document.getElementById('view-subtotal').innerText = symbol + subtotal.toLocaleString('en-US', {minimumFractionDigits: 2});
-            document.getElementById('view-igv').innerText = symbol + igv.toLocaleString('en-US', {minimumFractionDigits: 2});
-            document.getElementById('view-total').innerText = symbol + total.toLocaleString('en-US', {minimumFractionDigits: 2});
-            
+            document.getElementById('view-subtotal').innerText = "S/ " + grandSubtotal.toFixed(2);
+            document.getElementById('view-total-desc').innerText = "- S/ " + grandDescuento.toFixed(2);
+            document.getElementById('view-igv').innerText = "S/ " + igv.toFixed(2);
+            document.getElementById('view-total').innerText = "S/ " + totalFinal.toFixed(2);
+
             const detBox = document.getElementById('view-detraccion-box');
-            if(aplicaDet && total > 700 && moneda === 'PEN') {
+            if (document.getElementById('aplicaDetraccion').checked && totalFinal > 700) {
                 detBox.classList.remove('hidden');
-                document.getElementById('view-detraccion').innerText = symbol + valDet.toFixed(2);
+                document.getElementById('view-detraccion').innerText = "S/ " + (totalFinal * (percDet / 100)).toFixed(2);
             } else {
                 detBox.classList.add('hidden');
             }
-            updatePreview();
         }
 
         function updatePreview() {
-            const clienteSelect = document.getElementById('cliente');
-            const vdorSelect = document.getElementById('vendedor');
-            
-            document.getElementById('view-cliente').innerText = clienteSelect.options[clienteSelect.selectedIndex]?.text || "-";
-            document.getElementById('view-ruc').innerText = "RUC: " + (clienteSelect.options[clienteSelect.selectedIndex]?.getAttribute('data-ruc') || '-');
-            document.getElementById('view-vendedor').innerText = vdorSelect.options[vdorSelect.selectedIndex]?.text || "-";
-            document.getElementById('view-fecha').innerText = new Date().toLocaleDateString('es-PE');
+            const cli = document.getElementById('cliente');
+            document.getElementById('view-cliente').innerText = cli.options[cli.selectedIndex]?.text || "-";
+            document.getElementById('view-ruc').innerText = "RUC: " + (cli.options[cli.selectedIndex]?.getAttribute('data-ruc') || "-");
+            document.getElementById('view-fecha').innerText = document.getElementById('fecha_emision').value;
+            document.getElementById('view-validez').innerText = "Validez: " + document.getElementById('validez').value + " días";
+            calculateTotals();
         }
 
         async function guardarCotizacion() {
-            // Lógica para recolectar y enviar a backend (Paso siguiente)
-            alert("Listo para enviar a la base de datos de Supabase.");
+            alert("Sincronizando con SAP Business One y Supabase...");
         }
     </script>
 </body>

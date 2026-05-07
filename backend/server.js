@@ -6,12 +6,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Reemplaza con tus credenciales de Supabase
+// Credenciales de Supabase
 const supabaseUrl = 'https://xkpxuxjvcjkcxrzptmqf.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhrcHh1eGp2Y2prY3hyenB0bXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzc4NjAsImV4cCI6MjA5Mzc1Mzg2MH0.4J6F2aiOWVTav-OdF6zBjsThL766biQYsspH-fRRdX0';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Ruta para obtener todos los catálogos de un solo golpe
+// Ruta para obtener el correlativo siguiente
+app.get('/correlativo-siguiente', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('cotizaciones')
+            .select('numero')
+            .order('id', { ascending: false })
+            .limit(1);
+
+        let proximoNumero = 1;
+        if (data && data.length > 0) {
+            const ultimoNroStr = data[0].numero.split('-').pop();
+            proximoNumero = parseInt(ultimoNroStr) + 1;
+        }
+        
+        const anio = new Date().getFullYear();
+        const correlativo = `COT-${anio}-${String(proximoNumero).padStart(3, '0')}`;
+        res.json({ correlativo });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Ruta de catálogos
 app.get('/catalogos', async (req, res) => {
     try {
         const [clientes, vendedores, items, condiciones, detracciones] = await Promise.all([
