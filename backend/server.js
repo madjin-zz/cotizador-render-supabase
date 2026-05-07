@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Reemplaza con tus credenciales de Supabase
-const supabaseUrl = 'https://tu-proyecto.supabase.co';
+const supabaseUrl = 'https://cotizador-render-supabase.onrender.com';
 const supabaseKey = 'tu-anon-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
