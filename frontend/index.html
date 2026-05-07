@@ -6,9 +6,10 @@
     <title>Cotizador Pro - SAP Business One Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @media print { .no-print { display: none; } }
+        @media print { .no-print { display: none; } #pdf-preview { scale: 1 !important; transform: none !important; } }
         #pdf-preview { transform-origin: top center; }
         .col-header { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #4b5563; }
+        .subtotal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -36,119 +37,114 @@
             <div class="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Cliente</label>
-                    <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
-                        <option value="">Cargando clientes...</option>
-                    </select>
+                    <select id="cliente" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()"></select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Vendedor</label>
-                    <select id="vendedor" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()">
-                        <option value="">Cargando vendedores...</option>
-                    </select>
+                    <select id="vendedor" class="w-full p-2 border rounded-md bg-gray-50" onchange="updatePreview()"></select>
                 </div>
             </div>
 
-            <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+            <div class="mb-6 p-4 border rounded-lg bg-gray-50">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-blue-900">Lineas de Detalle Equipos y Componentes</h3>
-                    <button onclick="addRow('equipos')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Agregar Equipo</button>
+                    <h3 class="font-bold text-blue-900">1. Equipos y Componentes</h3>
+                    <button onclick="addRow('equipos')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Item</button>
                 </div>
-                <div class="grid grid-cols-12 gap-1 mb-2 px-1 text-[9px] uppercase font-bold text-gray-500">
-                    <div class="col-span-4">Descripción</div>
-                    <div class="col-span-1 text-center">Cant</div>
-                    <div class="col-span-2 text-right">P. Unit</div>
-                    <div class="col-span-1 text-center">% Desc</div>
-                    <div class="col-span-2 text-right">P. Desc</div>
-                    <div class="col-span-2 text-right">Total</div>
+                <div id="container-equipos" class="space-y-1 mb-4"></div>
+                
+                <div class="flex gap-2 items-center bg-white p-2 rounded border mb-2">
+                    <input type="checkbox" id="detra-equipos" onchange="calculateTotals()">
+                    <span class="text-xs font-bold text-gray-600">Aplica Detracción</span>
+                    <select id="tipo-detra-equipos" class="text-xs p-1 border rounded flex-1" onchange="calculateTotals()"></select>
                 </div>
-                <div id="container-equipos" class="space-y-1"></div>
             </div>
 
-            <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+            <div class="mb-6 p-4 border rounded-lg bg-gray-50">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-blue-900">Lineas de Detalle de Servicios</h3>
-                    <button onclick="addRow('servicios')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Agregar Servicio</button>
+                    <h3 class="font-bold text-blue-900">2. Servicios</h3>
+                    <button onclick="addRow('servicios')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs">+ Servicio</button>
                 </div>
-                <div id="container-servicios" class="space-y-1"></div>
+                <div id="container-servicios" class="space-y-1 mb-4"></div>
+
+                <div class="flex gap-2 items-center bg-white p-2 rounded border mb-2">
+                    <input type="checkbox" id="detra-servicios" checked onchange="calculateTotals()">
+                    <span class="text-xs font-bold text-gray-600">Aplica Detracción</span>
+                    <select id="tipo-detra-servicios" class="text-xs p-1 border rounded flex-1" onchange="calculateTotals()"></select>
+                </div>
             </div>
 
-            <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="aplicaDetraccion" onchange="calculateTotals()">
-                    <label for="aplicaDetraccion" class="font-medium text-blue-800 text-sm">¿Aplica Detracción?</label>
-                </div>
-                <select id="tipoDetraccion" class="w-full mt-2 p-2 border rounded-md text-sm" onchange="calculateTotals()"></select>
-            </div>
-
-            <button onclick="guardarCotizacion()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
-                GUARDAR Y SINCRONIZAR
+            <button onclick="window.print()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
+                IMPRIMIR / GUARDAR PDF
             </button>
         </div>
 
         <div class="w-full lg:w-1/2 p-10 bg-gray-200 flex justify-center overflow-auto">
-            <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl scale-[0.6] lg:scale-[0.85] xl:scale-100">
+            <div id="pdf-preview" class="bg-white w-[210mm] min-h-[297mm] p-12 shadow-2xl scale-[0.6] lg:scale-[0.85] xl:scale-100 font-sans">
                 <div class="flex justify-between border-b-2 border-blue-800 pb-4 mb-6">
                     <div>
                         <h1 class="text-3xl font-black text-blue-900">COTIZACIÓN</h1>
                         <p class="text-gray-500 font-mono">Nro: <span id="view-nro">-</span></p>
                     </div>
-                    <div class="text-right text-sm">
+                    <div class="text-right text-[10px]">
                         <p class="font-bold">MI NEGOCIO ERP S.A.C.</p>
+                        <p>RUC: 20600000000</p>
                         <p>Lima, Perú</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-8 mb-4 text-sm">
+                <div class="grid grid-cols-2 gap-8 mb-6 text-xs">
                     <div>
                         <p class="col-header">Cliente</p>
-                        <p id="view-cliente" class="font-bold text-gray-800">-</p>
+                        <p id="view-cliente" class="font-bold text-gray-800 text-sm">-</p>
                         <p id="view-ruc" class="text-gray-600">-</p>
                     </div>
                     <div class="text-right">
-                        <p class="col-header">Fecha / Validez</p>
+                        <p class="col-header">Emisión / Validez</p>
                         <p id="view-fecha" class="text-gray-800">-</p>
-                        <p id="view-validez" class="text-gray-500 text-xs">-</p>
+                        <p id="view-validez" class="text-gray-500">-</p>
                     </div>
                 </div>
 
-                <div id="view-seccion-equipos" class="mb-6">
-                    <h4 class="text-[10px] font-bold text-blue-800 border-b mb-1">EQUIPOS Y COMPONENTES</h4>
+                <div id="view-sec-equipos" class="mb-6 hidden">
+                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1">I. EQUIPOS Y COMPONENTES</h4>
                     <table class="w-full text-[10px] mb-2">
-                        <thead><tr class="bg-gray-100">
-                            <th class="p-1 text-left">Descripción</th>
-                            <th class="p-1 text-center">Cant.</th>
-                            <th class="p-1 text-right">P.Unit</th>
-                            <th class="p-1 text-center">% Desc</th>
-                            <th class="p-1 text-right">Total</th>
+                        <thead><tr class="border-b-2">
+                            <th class="text-left py-1">Descripción</th>
+                            <th class="text-center">Cant</th>
+                            <th class="text-right">P. Unit</th>
+                            <th class="text-center">% Desc</th>
+                            <th class="text-right">Total</th>
                         </tr></thead>
                         <tbody id="view-body-equipos"></tbody>
                     </table>
+                    <div class="flex justify-end"><div id="view-resumen-equipos" class="w-48 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
                 </div>
 
-                <div id="view-seccion-servicios" class="mb-6">
-                    <h4 class="text-[10px] font-bold text-blue-800 border-b mb-1">SERVICIOS</h4>
+                <div id="view-sec-servicios" class="mb-6 hidden">
+                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1">II. SERVICIOS</h4>
                     <table class="w-full text-[10px] mb-2">
-                        <thead><tr class="bg-gray-100">
-                            <th class="p-1 text-left">Descripción</th>
-                            <th class="p-1 text-center">Cant.</th>
-                            <th class="p-1 text-right">P.Unit</th>
-                            <th class="p-1 text-center">% Desc</th>
-                            <th class="p-1 text-right">Total</th>
+                        <thead><tr class="border-b-2">
+                            <th class="text-left py-1">Descripción</th>
+                            <th class="text-center">Cant</th>
+                            <th class="text-right">P. Unit</th>
+                            <th class="text-center">% Desc</th>
+                            <th class="text-right">Total</th>
                         </tr></thead>
                         <tbody id="view-body-servicios"></tbody>
                     </table>
+                    <div class="flex justify-end"><div id="view-resumen-servicios" class="w-48 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
                 </div>
 
-                <div class="flex justify-end pt-4 border-t-2">
-                    <div class="w-64 space-y-1 text-[11px]">
-                        <div class="flex justify-between"><span>Subtotal:</span> <span id="view-subtotal">0.00</span></div>
-                        <div class="flex justify-between text-red-600"><span>Total Descuento:</span> <span id="view-total-desc">0.00</span></div>
-                        <div class="flex justify-between"><span>IGV (18%):</span> <span id="view-igv">0.00</span></div>
-                        <div class="flex justify-between font-bold text-lg text-blue-900 border-t pt-1">
-                            <span>TOTAL FINAL:</span> <span id="view-total">0.00</span>
+                <div class="flex justify-end mt-10 border-t-4 border-blue-900 pt-4">
+                    <div class="w-64 space-y-1">
+                        <div class="flex justify-between text-xs"><span>SUBTOTAL GLOBAL:</span> <span id="view-g-sub">0.00</span></div>
+                        <div class="flex justify-between text-xs text-red-600"><span>TOTAL DESCUENTO:</span> <span id="view-g-desc">0.00</span></div>
+                        <div class="flex justify-between text-xs"><span>IGV TOTAL (18%):</span> <span id="view-g-igv">0.00</span></div>
+                        <div class="flex justify-between font-black text-xl text-blue-900 border-t pt-2">
+                            <span>TOTAL FINAL:</span> <span id="view-g-total">0.00</span>
                         </div>
-                        <div id="view-detraccion-box" class="hidden text-orange-700 text-[10px] italic pt-2">
-                            * Sujeto a detracción: <span id="view-detraccion">0.00</span>
+                        <div id="view-g-detra-box" class="text-[9px] text-orange-800 font-bold text-right pt-2 hidden">
+                            * TOTAL DETRACCIÓN A DEPOSITAR: <span id="view-g-detra">0.00</span>
                         </div>
                     </div>
                 </div>
@@ -174,7 +170,7 @@
                 const data = await res.json();
                 document.getElementById('correlativo').value = data.correlativo;
                 document.getElementById('view-nro').innerText = data.correlativo;
-            } catch (e) { console.error(e); }
+            } catch (e) { document.getElementById('correlativo').value = "ERR-CONN"; }
         }
 
         async function cargarCatalogos() {
@@ -182,46 +178,41 @@
                 const res = await fetch(`${API_URL}/catalogos`);
                 const cat = await res.json();
                 
-                const clienteSel = document.getElementById('cliente');
-                clienteSel.innerHTML = '<option value="">Seleccione Cliente...</option>';
+                const cliSel = document.getElementById('cliente');
                 cat.clientes.forEach(c => {
                     let opt = new Option(c.razon_social, c.id);
                     opt.setAttribute('data-ruc', c.ruc);
-                    clienteSel.add(opt);
+                    cliSel.add(opt);
                 });
 
                 const vdorSel = document.getElementById('vendedor');
-                vdorSel.innerHTML = '<option value="">Seleccione Vendedor...</option>';
                 cat.vendedores.forEach(v => vdorSel.add(new Option(v.nombre, v.id)));
 
-                const detSel = document.getElementById('tipoDetraccion');
-                cat.detracciones.forEach(d => detSel.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
+                ['equipos', 'servicios'].forEach(z => {
+                    const sel = document.getElementById(`tipo-detra-${z}`);
+                    cat.detracciones.forEach(d => sel.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
+                });
 
                 window.catalogoItems = cat.items;
-            } catch (error) { alert("Error al cargar datos de Supabase"); }
+            } catch (e) { alert("Error de conexión"); }
         }
 
         function addRow(tipo) {
             const container = document.getElementById(`container-${tipo}`);
             const row = document.createElement('div');
             row.className = "grid grid-cols-12 gap-1 items-center mb-1 group";
-            
-            const itemOptions = window.catalogoItems.map(i => `<option value="${i.id}" data-precio="${i.precio_unitario}">${i.descripcion}</option>`).join('');
-
             row.innerHTML = `
-                <div class="col-span-4">
-                    <select class="w-full p-1 text-[10px] border rounded" onchange="updateRow(this)">
-                        <option value="">Seleccione...</option>
-                        ${itemOptions}
-                    </select>
-                </div>
+                <div class="col-span-4"><select class="w-full p-1 text-[10px] border rounded" onchange="updateRow(this)">
+                    <option value="">Seleccione...</option>
+                    ${window.catalogoItems.map(i => `<option value="${i.id}" data-precio="${i.precio_unitario}">${i.descripcion}</option>`).join('')}
+                </select></div>
                 <div class="col-span-1"><input type="number" value="1" class="w-full p-1 text-[10px] border rounded text-center" oninput="calculateTotals()"></div>
                 <div class="col-span-2"><input type="number" step="0.01" class="w-full p-1 text-[10px] border rounded text-right" oninput="calculateTotals()"></div>
                 <div class="col-span-1"><input type="number" value="0" class="w-full p-1 text-[10px] border rounded text-center bg-yellow-50" oninput="calculateTotals()"></div>
                 <div class="col-span-2"><input type="number" class="w-full p-1 text-[10px] border rounded text-right bg-gray-100" readonly></div>
                 <div class="col-span-2 flex items-center">
                     <input type="number" class="w-full p-1 text-[10px] border rounded text-right font-bold bg-blue-50" readonly>
-                    <button onclick="this.parentElement.parentElement.remove(); calculateTotals();" class="ml-1 text-red-400 hover:text-red-600">×</button>
+                    <button onclick="this.parentElement.parentElement.remove(); calculateTotals();" class="ml-1 text-red-400">×</button>
                 </div>
             `;
             container.appendChild(row);
@@ -229,75 +220,79 @@
 
         function updateRow(select) {
             const row = select.parentElement.parentElement;
-            const precio = select.options[select.selectedIndex].getAttribute('data-precio');
-            row.children[2].querySelector('input').value = precio;
+            row.children[2].querySelector('input').value = select.options[select.selectedIndex].getAttribute('data-precio');
             calculateTotals();
         }
 
         function calculateTotals() {
-            let grandSubtotal = 0;
-            let grandDescuento = 0;
+            let totalGlobalSub = 0, totalGlobalDesc = 0, totalGlobalDetra = 0;
 
             ['equipos', 'servicios'].forEach(tipo => {
-                let seccionSubtotal = 0;
-                let previewHtml = "";
+                let subZona = 0, descZona = 0, html = "";
                 const rows = document.querySelectorAll(`#container-${tipo} > div`);
 
                 rows.forEach(row => {
-                    const desc = row.children[0].querySelector('select').options[row.children[0].querySelector('select').selectedIndex].text;
+                    const sel = row.children[0].querySelector('select');
+                    if (sel.value === "") return;
+
                     const cant = parseFloat(row.children[1].querySelector('input').value) || 0;
                     const pUnit = parseFloat(row.children[2].querySelector('input').value) || 0;
-                    const pDesc = parseFloat(row.children[3].querySelector('input').value) || 0;
+                    const pDescPerc = parseFloat(row.children[3].querySelector('input').value) || 0;
 
                     const totalBruto = cant * pUnit;
-                    const montoDesc = totalBruto * (pDesc / 100);
-                    const pConDesc = pUnit * (1 - (pDesc / 100));
-                    const totalLinea = cant * pConDesc;
+                    const montoDesc = totalBruto * (pDescPerc / 100);
+                    const pNeto = pUnit * (1 - (pDescPerc / 100));
+                    const totalLinea = cant * pNeto;
 
-                    row.children[4].querySelector('input').value = pConDesc.toFixed(2);
+                    row.children[4].querySelector('input').value = pNeto.toFixed(2);
                     row.children[5].querySelector('input').value = totalLinea.toFixed(2);
 
-                    seccionSubtotal += totalLinea;
-                    grandDescuento += montoDesc;
-
-                    if (row.children[0].querySelector('select').value !== "") {
-                        previewHtml += `<tr><td class="p-1 border-b">${desc}</td><td class="p-1 border-b text-center">${cant}</td><td class="p-1 border-b text-right">${pUnit.toFixed(2)}</td><td class="p-1 border-b text-center">${pDesc}%</td><td class="p-1 border-b text-right font-bold">${totalLinea.toFixed(2)}</td></tr>`;
-                    }
+                    subZona += totalLinea;
+                    descZona += montoDesc;
+                    html += `<tr><td class="py-1 border-b">${sel.options[sel.selectedIndex].text}</td><td class="text-center border-b">${cant}</td><td class="text-right border-b">${pUnit.toFixed(2)}</td><td class="text-center border-b">${pDescPerc}%</td><td class="text-right border-b font-bold">${totalLinea.toFixed(2)}</td></tr>`;
                 });
 
-                document.getElementById(`view-body-${tipo}`).innerHTML = previewHtml;
-                grandSubtotal += seccionSubtotal;
+                const igvZona = subZona * 0.18;
+                const totalZona = subZona + igvZona;
+                const aplicaDetra = document.getElementById(`detra-${tipo}`).checked;
+                const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
+                const montoDetra = (aplicaDetra && totalZona > 700) ? totalZona * (percDetra / 100) : 0;
+
+                // Actualizar UI
+                document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
+                document.getElementById(`view-body-${tipo}`).innerHTML = html;
+                document.getElementById(`view-resumen-${tipo}`).innerHTML = `
+                    <span>Subtotal:</span><span class="text-right">S/ ${subZona.toFixed(2)}</span>
+                    <span>IGV (18%):</span><span class="text-right">S/ ${igvZona.toFixed(2)}</span>
+                    <span class="font-bold text-black">Total ${tipo}:</span><span class="text-right font-bold text-black">S/ ${totalZona.toFixed(2)}</span>
+                    ${montoDetra > 0 ? `<span class="text-orange-700">Detracción (${percDetra}%):</span><span class="text-right text-orange-700">S/ ${montoDetra.toFixed(2)}</span>` : ''}
+                `;
+
+                totalGlobalSub += subZona;
+                totalGlobalDesc += descZona;
+                totalGlobalDetra += montoDetra;
             });
 
-            const igv = grandSubtotal * 0.18;
-            const totalFinal = grandSubtotal + igv;
-            const percDet = parseFloat(document.getElementById('tipoDetraccion').value) || 0;
+            const gIgv = totalGlobalSub * 0.18;
+            const gTotal = totalGlobalSub + gIgv;
 
-            document.getElementById('view-subtotal').innerText = "S/ " + grandSubtotal.toFixed(2);
-            document.getElementById('view-total-desc').innerText = "- S/ " + grandDescuento.toFixed(2);
-            document.getElementById('view-igv').innerText = "S/ " + igv.toFixed(2);
-            document.getElementById('view-total').innerText = "S/ " + totalFinal.toFixed(2);
-
-            const detBox = document.getElementById('view-detraccion-box');
-            if (document.getElementById('aplicaDetraccion').checked && totalFinal > 700) {
-                detBox.classList.remove('hidden');
-                document.getElementById('view-detraccion').innerText = "S/ " + (totalFinal * (percDet / 100)).toFixed(2);
-            } else {
-                detBox.classList.add('hidden');
-            }
+            document.getElementById('view-g-sub').innerText = "S/ " + totalGlobalSub.toFixed(2);
+            document.getElementById('view-g-desc').innerText = "- S/ " + totalGlobalDesc.toFixed(2);
+            document.getElementById('view-g-igv').innerText = "S/ " + gIgv.toFixed(2);
+            document.getElementById('view-g-total').innerText = "S/ " + gTotal.toFixed(2);
+            
+            const gDetraBox = document.getElementById('view-g-detra-box');
+            gDetraBox.classList.toggle('hidden', totalGlobalDetra === 0);
+            document.getElementById('view-g-detra').innerText = "S/ " + totalGlobalDetra.toFixed(2);
+            updatePreview();
         }
 
         function updatePreview() {
             const cli = document.getElementById('cliente');
             document.getElementById('view-cliente').innerText = cli.options[cli.selectedIndex]?.text || "-";
             document.getElementById('view-ruc').innerText = "RUC: " + (cli.options[cli.selectedIndex]?.getAttribute('data-ruc') || "-");
-            document.getElementById('view-fecha').innerText = document.getElementById('fecha_emision').value;
+            document.getElementById('view-fecha').innerText = "Fecha: " + document.getElementById('fecha_emision').value;
             document.getElementById('view-validez').innerText = "Validez: " + document.getElementById('validez').value + " días";
-            calculateTotals();
-        }
-
-        async function guardarCotizacion() {
-            alert("Sincronizando con SAP Business One y Supabase...");
         }
     </script>
 </body>

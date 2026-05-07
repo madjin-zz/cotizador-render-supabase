@@ -21,9 +21,10 @@ app.get('/correlativo-siguiente', async (req, res) => {
             .limit(1);
 
         let proximoNumero = 1;
-        if (data && data.length > 0) {
-            const ultimoNroStr = data[0].numero.split('-').pop();
-            proximoNumero = parseInt(ultimoNroStr) + 1;
+        if (data && data.length > 0 && data[0].numero) {
+            const partes = data[0].numero.split('-');
+            const ultimoNro = parseInt(partes[partes.length - 1]);
+            proximoNumero = isNaN(ultimoNro) ? 1 : ultimoNro + 1;
         }
         
         const anio = new Date().getFullYear();
@@ -46,11 +47,11 @@ app.get('/catalogos', async (req, res) => {
         ]);
 
         res.json({
-            clientes: clientes.data,
-            vendedores: vendedores.data,
-            items: items.data,
-            condiciones: condiciones.data,
-            detracciones: detracciones.data
+            clientes: clientes.data || [],
+            vendedores: vendedores.data || [],
+            items: items.data || [],
+            condiciones: condiciones.data || [],
+            detracciones: detracciones.data || []
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
