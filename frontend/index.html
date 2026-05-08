@@ -85,6 +85,11 @@
                 </div>
             </div>
 
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones Generales</label>
+                <textarea id="observaciones" rows="4" class="w-full p-2 border rounded-md" placeholder="Escriba aquí notas adicionales..." oninput="updatePreview()"></textarea>
+            </div>
+
             <button onclick="window.print()" class="w-full bg-blue-700 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-blue-800 transition">
                 IMPRIMIR / GUARDAR PDF
             </button>
@@ -136,6 +141,11 @@
                         <tbody id="view-body-servicios"></tbody>
                     </table>
                     <div class="flex justify-end"><div id="view-resumen-servicios" class="w-64 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
+                </div>
+
+                <div id="view-obs-container" class="mt-8 mb-4 hidden">
+                    <p class="col-header border-b mb-1">Observaciones</p>
+                    <p id="view-observaciones" class="text-gray-800 text-sm whitespace-pre-wrap italic"></p>
                 </div>
 
                 <div class="flex justify-end mt-10 border-t-4 border-blue-900 pt-4">
@@ -256,8 +266,6 @@
                 const totalZona = subZona + igvZona;
                 const aplicaDetra = document.getElementById(`detra-${tipo}`).checked;
                 const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
-                
-                // CAMBIO SOLICITADO: Validación manual únicamente por Checkbox
                 const montoDetra = aplicaDetra ? totalZona * (percDetra/100) : 0;
 
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
@@ -293,12 +301,19 @@
             const cli = document.getElementById('cliente');
             const cond = document.getElementById('condicion_pago');
             const mon = document.getElementById('moneda');
+            const obs = document.getElementById('observaciones').value;
+
             document.getElementById('view-cliente').innerText = cli.options[cli.selectedIndex]?.text || "-";
             document.getElementById('view-ruc').innerText = "RUC: " + (cli.options[cli.selectedIndex]?.getAttribute('data-ruc') || "-");
             document.getElementById('view-fecha').innerText = document.getElementById('fecha_emision').value;
             document.getElementById('view-validez').innerText = document.getElementById('validez').value + " días";
             document.getElementById('view-condicion').innerText = cond.options[cond.selectedIndex]?.text || "-";
             document.getElementById('view-moneda_text').innerText = mon.options[mon.selectedIndex]?.text || "-";
+            
+            // Actualización de Observaciones
+            const viewObs = document.getElementById('view-observaciones');
+            viewObs.innerText = obs;
+            document.getElementById('view-obs-container').classList.toggle('hidden', obs.trim() === "");
         }
     </script>
 </body>
