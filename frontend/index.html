@@ -131,7 +131,7 @@
                         <thead><tr class="border-b-2 text-gray-600"><th class="text-left py-1">Descripción</th><th class="text-center">Cant</th><th class="text-right">P. Unit</th><th class="text-center">% Desc</th><th class="text-right">Total</th></tr></thead>
                         <tbody id="view-body-equipos"></tbody>
                     </table>
-                    <div class="flex justify-end"><div id="view-resumen-equipos" class="w-48 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
+                    <div class="flex justify-end"><div id="view-resumen-equipos" class="w-64 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
                 </div>
 
                 <div id="view-sec-servicios" class="mb-6 hidden">
@@ -140,19 +140,22 @@
                         <thead><tr class="border-b-2 text-gray-600"><th class="text-left py-1">Descripción</th><th class="text-center">Cant</th><th class="text-right">P. Unit</th><th class="text-center">% Desc</th><th class="text-right">Total</th></tr></thead>
                         <tbody id="view-body-servicios"></tbody>
                     </table>
-                    <div class="flex justify-end"><div id="view-resumen-servicios" class="w-48 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
+                    <div class="flex justify-end"><div id="view-resumen-servicios" class="w-64 subtotal-grid border-t pt-1 italic text-gray-600"></div></div>
                 </div>
 
                 <div class="flex justify-end mt-10 border-t-4 border-blue-900 pt-4">
-                    <div class="w-64 space-y-1">
+                    <div class="w-72 space-y-1">
                         <div class="flex justify-between text-xs"><span>SUBTOTAL GLOBAL:</span> <span id="view-g-sub">0.00</span></div>
                         <div class="flex justify-between text-xs text-red-600"><span>TOTAL DESCUENTO:</span> <span id="view-g-desc">0.00</span></div>
                         <div class="flex justify-between text-xs"><span>IGV TOTAL (18%):</span> <span id="view-g-igv">0.00</span></div>
                         <div class="flex justify-between font-black text-xl text-blue-900 border-t pt-2">
                             <span>TOTAL FINAL:</span> <span id="view-g-total">0.00</span>
                         </div>
-                        <div id="view-g-detra-box" class="text-[9px] text-orange-800 font-bold text-right pt-2 hidden">
-                            * TOTAL DETRACCIÓN A DEPOSITAR: <span id="view-g-detra">0.00</span>
+                        <div id="view-g-detra-box" class="text-[10px] text-orange-800 font-bold border-t border-orange-200 pt-2 mt-2 hidden">
+                            <div class="flex justify-between">
+                                <span>TOTAL DETRACCIÓN A DEPOSITAR:</span>
+                                <span id="view-g-detra">0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -268,12 +271,15 @@
 
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
                 document.getElementById(`view-body-${tipo}`).innerHTML = html;
+                
+                // RESTAURADO: Líneas de visualización de detracción por zona
                 document.getElementById(`view-resumen-${tipo}`).innerHTML = `
                     <span>Subtotal:</span><span class="text-right">${symbol}${subZona.toFixed(2)}</span>
                     <span>IGV (18%):</span><span class="text-right">${symbol}${igvZona.toFixed(2)}</span>
-                    <span class="font-bold text-black">Total ${tipo}:</span><span class="text-right font-bold text-black">${symbol}${totalZona.toFixed(2)}</span>
+                    <span class="font-bold text-black border-t">Total ${tipo}:</span><span class="text-right font-bold text-black border-t">${symbol}${totalZona.toFixed(2)}</span>
                     ${montoDetra > 0 ? `<span class="text-orange-700">Detracción (${percDetra}%):</span><span class="text-right text-orange-700">${symbol}${montoDetra.toFixed(2)}</span>` : ''}
                 `;
+                
                 totalGlobalSub += subZona; totalGlobalDesc += descZona; totalGlobalDetra += montoDetra;
             });
 
@@ -283,9 +289,16 @@
             document.getElementById('view-g-desc').innerText = "- " + symbol + totalGlobalDesc.toFixed(2);
             document.getElementById('view-g-igv').innerText = symbol + gIgv.toFixed(2);
             document.getElementById('view-g-total').innerText = symbol + gTotal.toFixed(2);
+            
+            // RESTAURADO: Visualización de detracción global
             const gDetraBox = document.getElementById('view-g-detra-box');
-            gDetraBox.classList.toggle('hidden', totalGlobalDetra === 0);
-            document.getElementById('view-g-detra').innerText = symbol + totalGlobalDetra.toFixed(2);
+            if (totalGlobalDetra > 0) {
+                gDetraBox.classList.remove('hidden');
+                document.getElementById('view-g-detra').innerText = symbol + totalGlobalDetra.toFixed(2);
+            } else {
+                gDetraBox.classList.add('hidden');
+            }
+            
             updatePreview();
         }
 
