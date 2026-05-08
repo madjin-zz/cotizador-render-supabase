@@ -9,7 +9,7 @@
         @media print { .no-print { display: none; } #pdf-preview { scale: 1 !important; transform: none !important; } }
         #pdf-preview { transform-origin: top center; }
         .col-header { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #4b5563; }
-        .subtotal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px; }
+        .subtotal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4px; font-size: 11px; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -144,14 +144,14 @@
                 </div>
 
                 <div class="flex justify-end mt-10 border-t-4 border-blue-900 pt-4">
-                    <div class="w-72 space-y-1">
+                    <div class="w-80 space-y-1">
                         <div class="flex justify-between text-xs"><span>SUBTOTAL GLOBAL:</span> <span id="view-g-sub">0.00</span></div>
                         <div class="flex justify-between text-xs text-red-600"><span>TOTAL DESCUENTO:</span> <span id="view-g-desc">0.00</span></div>
                         <div class="flex justify-between text-xs"><span>IGV TOTAL (18%):</span> <span id="view-g-igv">0.00</span></div>
                         <div class="flex justify-between font-black text-xl text-blue-900 border-t pt-2">
                             <span>TOTAL FINAL:</span> <span id="view-g-total">0.00</span>
                         </div>
-                        <div id="view-g-detra-box" class="text-[10px] text-orange-800 font-bold border-t border-orange-200 pt-2 mt-2 hidden">
+                        <div id="view-g-detra-box" class="text-[11px] text-orange-800 font-bold border-t-2 border-orange-200 pt-2 mt-2 hidden">
                             <div class="flex justify-between">
                                 <span>TOTAL DETRACCIÓN A DEPOSITAR:</span>
                                 <span id="view-g-detra">0.00</span>
@@ -272,12 +272,11 @@
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
                 document.getElementById(`view-body-${tipo}`).innerHTML = html;
                 
-                // RESTAURADO: Líneas de visualización de detracción por zona
                 document.getElementById(`view-resumen-${tipo}`).innerHTML = `
-                    <span>Subtotal:</span><span class="text-right">${symbol}${subZona.toFixed(2)}</span>
-                    <span>IGV (18%):</span><span class="text-right">${symbol}${igvZona.toFixed(2)}</span>
-                    <span class="font-bold text-black border-t">Total ${tipo}:</span><span class="text-right font-bold text-black border-t">${symbol}${totalZona.toFixed(2)}</span>
-                    ${montoDetra > 0 ? `<span class="text-orange-700">Detracción (${percDetra}%):</span><span class="text-right text-orange-700">${symbol}${montoDetra.toFixed(2)}</span>` : ''}
+                    <div class="flex justify-between"><span>Subtotal:</span><span>${symbol}${subZona.toFixed(2)}</span></div>
+                    <div class="flex justify-between"><span>IGV (18%):</span><span>${symbol}${igvZona.toFixed(2)}</span></div>
+                    <div class="flex justify-between font-bold text-black border-t"><span>Total ${tipo}:</span><span>${symbol}${totalZona.toFixed(2)}</span></div>
+                    ${montoDetra > 0 ? `<div class="flex justify-between text-orange-700"><span>Detracc. (${percDetra}%):</span><span>${symbol}${montoDetra.toFixed(2)}</span></div>` : ''}
                 `;
                 
                 totalGlobalSub += subZona; totalGlobalDesc += descZona; totalGlobalDetra += montoDetra;
@@ -290,7 +289,6 @@
             document.getElementById('view-g-igv').innerText = symbol + gIgv.toFixed(2);
             document.getElementById('view-g-total').innerText = symbol + gTotal.toFixed(2);
             
-            // RESTAURADO: Visualización de detracción global
             const gDetraBox = document.getElementById('view-g-detra-box');
             if (totalGlobalDetra > 0) {
                 gDetraBox.classList.remove('hidden');
