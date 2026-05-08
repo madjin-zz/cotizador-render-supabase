@@ -9,7 +9,6 @@
         @media print { .no-print { display: none; } #pdf-preview { scale: 1 !important; transform: none !important; } }
         #pdf-preview { transform-origin: top center; }
         .col-header { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #4b5563; }
-        /* Ajuste de subtotales para evitar que se muevan */
         .subtotal-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 4px; font-size: 11px; width: 100%; }
     </style>
 </head>
@@ -101,14 +100,9 @@
                         <div class="mt-4 text-[11px] leading-tight">
                             <p class="font-bold text-gray-800">JOSUE BENIGNO, QUINTANA PARRAGA</p>
                             <p class="text-gray-600">RUC: 1042479040</p>
-                            <p class="text-gray-600">Lima, Perú</p>
                         </div>
                     </div>
-                    <div class="text-right flex flex-col items-end">
-                        <p class="text-[8px] font-bold text-gray-400 uppercase leading-none">Actuando como distribuidor de:</p>
-                        <p class="text-[8px] font-bold text-gray-500 uppercase mb-2">Los equipos y servicios serán facturados por:</p>
-                        <img src="LOGO_1.png" alt="Logo" class="h-14 w-auto object-contain">
-                    </div>
+                    <img src="LOGO_1.png" alt="Logo" class="h-14 w-auto object-contain">
                 </div>
 
                 <div class="grid grid-cols-2 gap-8 mb-6 text-xs">
@@ -189,27 +183,22 @@
             try {
                 const res = await fetch(`${API_URL}/catalogos`);
                 const cat = await res.json();
-                
                 const cliSel = document.getElementById('cliente');
                 cat.clientes.forEach(c => {
                     let opt = new Option(c.razon_social, c.id);
                     opt.setAttribute('data-ruc', c.ruc);
                     cliSel.add(opt);
                 });
-
                 const vdorSel = document.getElementById('vendedor');
                 cat.vendedores.forEach(v => vdorSel.add(new Option(v.nombre, v.id)));
-
                 const condSel = document.getElementById('condicion_pago');
                 cat.condiciones.forEach(c => condSel.add(new Option(c.descripcion, c.id)));
-
                 ['equipos', 'servicios'].forEach(z => {
                     const sel = document.getElementById(`tipo-detra-${z}`);
                     cat.detracciones.forEach(d => sel.add(new Option(`${d.nombre} (${d.porcentaje}%)`, d.porcentaje)));
                 });
-
                 window.catalogoItems = cat.items;
-            } catch (e) { console.error("Error catálogos", e); }
+            } catch (e) { console.error(e); }
         }
 
         function addRow(tipo) {
@@ -228,8 +217,7 @@
                 <div class="col-span-2 flex items-center">
                     <input type="number" class="w-full p-1 text-[10px] border rounded text-right font-bold bg-blue-50" readonly>
                     <button onclick="this.parentElement.parentElement.remove(); calculateTotals();" class="ml-1 text-red-400">×</button>
-                </div>
-            `;
+                </div>`;
             container.appendChild(row);
         }
 
@@ -251,19 +239,15 @@
                 rows.forEach(row => {
                     const sel = row.children[0].querySelector('select');
                     if (!sel || sel.value === "") return;
-                    
                     const cant = parseFloat(row.children[1].querySelector('input').value) || 0;
                     const pUnit = parseFloat(row.children[2].querySelector('input').value) || 0;
                     const pDesc = parseFloat(row.children[3].querySelector('input').value) || 0;
-                    
                     const brutoLinea = cant * pUnit;
                     const valDesc = brutoLinea * (pDesc / 100);
                     const pNeto = pUnit * (1 - (pDesc / 100));
                     const totalLinea = cant * pNeto;
-
                     row.children[4].querySelector('input').value = pNeto.toFixed(2);
                     row.children[5].querySelector('input').value = totalLinea.toFixed(2);
-
                     subZona += totalLinea; descZona += valDesc;
                     html += `<tr><td class="py-1 border-b">${sel.options[sel.selectedIndex].text}</td><td class="text-center border-b">${cant}</td><td class="text-right border-b">${pUnit.toFixed(2)}</td><td class="text-center border-b">${pDesc}%</td><td class="text-right border-b font-bold">${totalLinea.toFixed(2)}</td></tr>`;
                 });
@@ -272,6 +256,8 @@
                 const totalZona = subZona + igvZona;
                 const aplicaDetra = document.getElementById(`detra-${tipo}`).checked;
                 const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
+                
+                // Lógica de cálculo: Solo en PEN y si supera 700
                 const montoDetra = (aplicaDetra && totalZona > 700 && mon === 'PEN') ? totalZona * (percDetra/100) : 0;
 
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
@@ -283,13 +269,11 @@
                     <span class="font-bold text-black border-t">Total ${tipo}:</span><span class="text-right font-bold text-black border-t">${symbol}${totalZona.toFixed(2)}</span>
                     ${montoDetra > 0 ? `<span class="text-orange-700 font-bold">Detracc. (${percDetra}%):</span><span class="text-right text-orange-700 font-bold">${symbol}${montoDetra.toFixed(2)}</span>` : ''}
                 `;
-                
                 tGlobalSub += subZona; tGlobalDesc += descZona; tGlobalDetra += montoDetra;
             });
 
             const gIgv = tGlobalSub * 0.18;
             const gTotal = tGlobalSub + gIgv;
-
             document.getElementById('view-g-sub').innerText = symbol + tGlobalSub.toFixed(2);
             document.getElementById('view-g-desc').innerText = "- " + symbol + tGlobalDesc.toFixed(2);
             document.getElementById('view-g-igv').innerText = symbol + gIgv.toFixed(2);
