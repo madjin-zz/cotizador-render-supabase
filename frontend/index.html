@@ -257,8 +257,8 @@
                 const aplicaDetra = document.getElementById(`detra-${tipo}`).checked;
                 const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
                 
-                // Lógica de cálculo: Solo en PEN y si supera 700
-                const montoDetra = (aplicaDetra && totalZona > 700 && mon === 'PEN') ? totalZona * (percDetra/100) : 0;
+                // CAMBIO SOLICITADO: Validación manual únicamente por Checkbox
+                const montoDetra = aplicaDetra ? totalZona * (percDetra/100) : 0;
 
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
                 document.getElementById(`view-body-${tipo}`).innerHTML = html;
