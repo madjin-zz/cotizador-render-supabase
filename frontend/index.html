@@ -9,7 +9,8 @@
         @media print { .no-print { display: none; } #pdf-preview { scale: 1 !important; transform: none !important; } }
         #pdf-preview { transform-origin: top center; }
         .col-header { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #4b5563; }
-        .subtotal-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4px; font-size: 11px; }
+        /* Ajuste de subtotales para evitar que se muevan */
+        .subtotal-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 4px; font-size: 11px; width: 100%; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -126,7 +127,7 @@
                 </div>
 
                 <div id="view-sec-equipos" class="mb-6 hidden">
-                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1">I. EQUIPOS Y COMPONENTES</h4>
+                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1 italic">I. EQUIPOS Y COMPONENTES</h4>
                     <table class="w-full text-[10px] mb-2">
                         <thead><tr class="border-b-2 text-gray-600"><th class="text-left py-1">Descripción</th><th class="text-center">Cant</th><th class="text-right">P. Unit</th><th class="text-center">% Desc</th><th class="text-right">Total</th></tr></thead>
                         <tbody id="view-body-equipos"></tbody>
@@ -135,7 +136,7 @@
                 </div>
 
                 <div id="view-sec-servicios" class="mb-6 hidden">
-                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1">II. SERVICIOS</h4>
+                    <h4 class="text-[10px] font-bold text-blue-800 bg-blue-50 p-1 mb-1 italic">II. SERVICIOS</h4>
                     <table class="w-full text-[10px] mb-2">
                         <thead><tr class="border-b-2 text-gray-600"><th class="text-left py-1">Descripción</th><th class="text-center">Cant</th><th class="text-right">P. Unit</th><th class="text-center">% Desc</th><th class="text-right">Total</th></tr></thead>
                         <tbody id="view-body-servicios"></tbody>
@@ -144,16 +145,16 @@
                 </div>
 
                 <div class="flex justify-end mt-10 border-t-4 border-blue-900 pt-4">
-                    <div class="w-80 space-y-1">
-                        <div class="flex justify-between text-xs"><span>SUBTOTAL GLOBAL:</span> <span id="view-g-sub">0.00</span></div>
+                    <div class="w-64 space-y-1">
+                        <div class="flex justify-between text-xs text-gray-700"><span>SUBTOTAL GLOBAL:</span> <span id="view-g-sub">0.00</span></div>
                         <div class="flex justify-between text-xs text-red-600"><span>TOTAL DESCUENTO:</span> <span id="view-g-desc">0.00</span></div>
-                        <div class="flex justify-between text-xs"><span>IGV TOTAL (18%):</span> <span id="view-g-igv">0.00</span></div>
+                        <div class="flex justify-between text-xs text-gray-700"><span>IGV TOTAL (18%):</span> <span id="view-g-igv">0.00</span></div>
                         <div class="flex justify-between font-black text-xl text-blue-900 border-t pt-2">
                             <span>TOTAL FINAL:</span> <span id="view-g-total">0.00</span>
                         </div>
-                        <div id="view-g-detra-box" class="text-[11px] text-orange-800 font-bold border-t-2 border-orange-200 pt-2 mt-2 hidden">
-                            <div class="flex justify-between">
-                                <span>TOTAL DETRACCIÓN A DEPOSITAR:</span>
+                        <div id="view-g-detra-box" class="hidden border-t border-orange-300 mt-2 pt-2">
+                            <div class="flex justify-between text-[10px] text-orange-800 font-bold">
+                                <span>DETRACCIÓN A DEPOSITAR:</span>
                                 <span id="view-g-detra">0.00</span>
                             </div>
                         </div>
@@ -208,7 +209,7 @@
                 });
 
                 window.catalogoItems = cat.items;
-            } catch (e) { alert("Error cargando catálogos"); }
+            } catch (e) { console.error("Error catálogos", e); }
         }
 
         function addRow(tipo) {
@@ -239,9 +240,9 @@
         }
 
         function calculateTotals() {
-            let totalGlobalSub = 0, totalGlobalDesc = 0, totalGlobalDetra = 0;
-            const moneda = document.getElementById('moneda').value;
-            const symbol = moneda === 'PEN' ? 'S/ ' : '$ ';
+            let tGlobalSub = 0, tGlobalDesc = 0, tGlobalDetra = 0;
+            const mon = document.getElementById('moneda').value;
+            const symbol = mon === 'PEN' ? 'S/ ' : '$ ';
 
             ['equipos', 'servicios'].forEach(tipo => {
                 let subZona = 0, descZona = 0, html = "";
@@ -249,54 +250,58 @@
 
                 rows.forEach(row => {
                     const sel = row.children[0].querySelector('select');
-                    if (sel.value === "") return;
+                    if (!sel || sel.value === "") return;
+                    
                     const cant = parseFloat(row.children[1].querySelector('input').value) || 0;
                     const pUnit = parseFloat(row.children[2].querySelector('input').value) || 0;
-                    const pDescPerc = parseFloat(row.children[3].querySelector('input').value) || 0;
-                    const totalBruto = cant * pUnit;
-                    const montoDesc = totalBruto * (pDescPerc / 100);
-                    const pNeto = pUnit * (1 - (pDescPerc / 100));
+                    const pDesc = parseFloat(row.children[3].querySelector('input').value) || 0;
+                    
+                    const brutoLinea = cant * pUnit;
+                    const valDesc = brutoLinea * (pDesc / 100);
+                    const pNeto = pUnit * (1 - (pDesc / 100));
                     const totalLinea = cant * pNeto;
+
                     row.children[4].querySelector('input').value = pNeto.toFixed(2);
                     row.children[5].querySelector('input').value = totalLinea.toFixed(2);
-                    subZona += totalLinea; descZona += montoDesc;
-                    html += `<tr><td class="py-1 border-b">${sel.options[sel.selectedIndex].text}</td><td class="text-center border-b">${cant}</td><td class="text-right border-b">${pUnit.toFixed(2)}</td><td class="text-center border-b">${pDescPerc}%</td><td class="text-right border-b font-bold">${totalLinea.toFixed(2)}</td></tr>`;
+
+                    subZona += totalLinea; descZona += valDesc;
+                    html += `<tr><td class="py-1 border-b">${sel.options[sel.selectedIndex].text}</td><td class="text-center border-b">${cant}</td><td class="text-right border-b">${pUnit.toFixed(2)}</td><td class="text-center border-b">${pDesc}%</td><td class="text-right border-b font-bold">${totalLinea.toFixed(2)}</td></tr>`;
                 });
 
                 const igvZona = subZona * 0.18;
                 const totalZona = subZona + igvZona;
                 const aplicaDetra = document.getElementById(`detra-${tipo}`).checked;
                 const percDetra = parseFloat(document.getElementById(`tipo-detra-${tipo}`).value) || 0;
-                const montoDetra = (aplicaDetra && totalZona > 700 && moneda === 'PEN') ? totalZona * (percDetra / 100) : 0;
+                const montoDetra = (aplicaDetra && totalZona > 700 && mon === 'PEN') ? totalZona * (percDetra/100) : 0;
 
                 document.getElementById(`view-sec-${tipo}`).classList.toggle('hidden', html === "");
                 document.getElementById(`view-body-${tipo}`).innerHTML = html;
                 
                 document.getElementById(`view-resumen-${tipo}`).innerHTML = `
-                    <div class="flex justify-between"><span>Subtotal:</span><span>${symbol}${subZona.toFixed(2)}</span></div>
-                    <div class="flex justify-between"><span>IGV (18%):</span><span>${symbol}${igvZona.toFixed(2)}</span></div>
-                    <div class="flex justify-between font-bold text-black border-t"><span>Total ${tipo}:</span><span>${symbol}${totalZona.toFixed(2)}</span></div>
-                    ${montoDetra > 0 ? `<div class="flex justify-between text-orange-700"><span>Detracc. (${percDetra}%):</span><span>${symbol}${montoDetra.toFixed(2)}</span></div>` : ''}
+                    <span>Subtotal:</span><span class="text-right">${symbol}${subZona.toFixed(2)}</span>
+                    <span>IGV (18%):</span><span class="text-right">${symbol}${igvZona.toFixed(2)}</span>
+                    <span class="font-bold text-black border-t">Total ${tipo}:</span><span class="text-right font-bold text-black border-t">${symbol}${totalZona.toFixed(2)}</span>
+                    ${montoDetra > 0 ? `<span class="text-orange-700 font-bold">Detracc. (${percDetra}%):</span><span class="text-right text-orange-700 font-bold">${symbol}${montoDetra.toFixed(2)}</span>` : ''}
                 `;
                 
-                totalGlobalSub += subZona; totalGlobalDesc += descZona; totalGlobalDetra += montoDetra;
+                tGlobalSub += subZona; tGlobalDesc += descZona; tGlobalDetra += montoDetra;
             });
 
-            const gIgv = totalGlobalSub * 0.18;
-            const gTotal = totalGlobalSub + gIgv;
-            document.getElementById('view-g-sub').innerText = symbol + totalGlobalSub.toFixed(2);
-            document.getElementById('view-g-desc').innerText = "- " + symbol + totalGlobalDesc.toFixed(2);
+            const gIgv = tGlobalSub * 0.18;
+            const gTotal = tGlobalSub + gIgv;
+
+            document.getElementById('view-g-sub').innerText = symbol + tGlobalSub.toFixed(2);
+            document.getElementById('view-g-desc').innerText = "- " + symbol + tGlobalDesc.toFixed(2);
             document.getElementById('view-g-igv').innerText = symbol + gIgv.toFixed(2);
             document.getElementById('view-g-total').innerText = symbol + gTotal.toFixed(2);
             
-            const gDetraBox = document.getElementById('view-g-detra-box');
-            if (totalGlobalDetra > 0) {
-                gDetraBox.classList.remove('hidden');
-                document.getElementById('view-g-detra').innerText = symbol + totalGlobalDetra.toFixed(2);
+            const boxDetra = document.getElementById('view-g-detra-box');
+            if(tGlobalDetra > 0) {
+                boxDetra.classList.remove('hidden');
+                document.getElementById('view-g-detra').innerText = symbol + tGlobalDetra.toFixed(2);
             } else {
-                gDetraBox.classList.add('hidden');
+                boxDetra.classList.add('hidden');
             }
-            
             updatePreview();
         }
 
